@@ -16,17 +16,21 @@
 
 package com.example.android.messagingservice;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationCompat.CarExtender;
 import android.support.v4.app.NotificationCompat.CarExtender.UnreadConversation;
-import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.app.RemoteInput;
 import android.util.Log;
@@ -48,11 +52,29 @@ public class MessagingService extends Service {
     private NotificationManagerCompat mNotificationManager;
 
     private final Messenger mMessenger = new Messenger(new IncomingHandler(this));
+    
+    private static final String NOTIFICATION_CHANNEL_ID = "my_notification_channel";
 
     @Override
     public void onCreate() {
         Log.d(TAG, "onCreate");
         mNotificationManager = NotificationManagerCompat.from(getApplicationContext());
+        createNotificationChannel();
+    }
+
+    private void createNotificationChannel() {
+        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel notificationChannel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, "My Notifications", NotificationManager.IMPORTANCE_DEFAULT);
+
+            // Configure the notification channel.
+            notificationChannel.setDescription("Channel description");
+            notificationChannel.enableLights(true);
+            notificationChannel.setLightColor(Color.RED);
+            notificationChannel.setVibrationPattern(new long[]{0, 1000, 500, 1000});
+            notificationChannel.enableVibration(true);
+            notificationManager.createNotificationChannel(notificationChannel);
+        }
     }
 
     @Override
@@ -130,7 +152,7 @@ public class MessagingService extends Service {
             }
         }
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext())
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext(), NOTIFICATION_CHANNEL_ID)
                 .setSmallIcon(R.drawable.notification_icon)
                 .setLargeIcon(BitmapFactory.decodeResource(
                         getApplicationContext().getResources(), R.drawable.android_contact))
